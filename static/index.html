@@ -118,52 +118,39 @@
   </div>
 
   <script>
-    const form = document.getElementById("form");
-    const results = document.getElementById("results");
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    results.innerHTML = "<li class='loading'>⏳ Validando...</li>";
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      results.innerHTML = "<li class='loading'>⏳ Validando...</li>";
+    const data = {
+      first: form.first.value,
+      middle: form.middle.value,
+      last: form.last.value,
+      domain: form.domain.value,
+      light_mode: form.light_mode.checked,
+      extras: form.extras.value.split(" ").filter(Boolean)
+    };
 
-      const data = {
-        first: form.first.value,
-        middle: form.middle.value,
-        last: form.last.value,
-        domain: form.domain.value,
-        light_mode: form.light_mode.checked,
-        extras: form.extras.value.split(" ").filter(Boolean)
-      };
+    try {
+      const res = await fetch("/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+      const json = await res.json();
+      console.log("Resposta da API:", json);
 
-      try {
-        const res = await fetch("/validate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data)
-        });
-
-        const json = await res.json();
-        results.innerHTML = "";
-
-        if (json.confirmed.length) {
-          json.confirmed.forEach(email => {
-            const li = document.createElement("li");
-            li.textContent = email + " ✔️";
-            results.appendChild(li);
-          });
-        } else {
-          results.innerHTML = "<li>Nenhum e-mail confirmado.</li>";
-        }
-
-        if (json.catch_all) {
-          const li = document.createElement("li");
-          li.textContent = "⚠️ Domínio parece ser catch-all.";
-          results.appendChild(li);
-        }
-
-      } catch (err) {
-        results.innerHTML = "<li>Erro ao validar. Tente novamente.</li>";
+      results.innerHTML = "";
+      results.innerHTML += `<li>✅ Confirmados: ${JSON.stringify(json.confirmed)}</li>`;
+      results.innerHTML += `<li>🔄 Totais testados: ${json.total_tested}</li>`;
+      if (json.catch_all) {
+        results.innerHTML += `<li>⚠️ Catch-all: true</li>`;
       }
-    });
-  </script>
+    } catch (err) {
+      console.error("Erro na requisição:", err);
+      results.innerHTML = `<li>❌ Erro ao validar: ${err.message}</li>`;
+    }
+  });
+</script>
 </body>
 </html>
