@@ -1,0 +1,5 @@
+fastapi
+uvicorn
+aiosmtplib
+dnspython
+email-validator

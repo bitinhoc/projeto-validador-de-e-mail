@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Validador de E-mails</title>
+  <style>
+    body { font-family: sans-serif; padding: 2rem; }
+    input, button { padding: 0.5rem; margin: 0.3rem 0; width: 100%; max-width: 300px; }
+    ul { padding-left: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>Validador de E-mails</h1>
+  <form id="form">
+    <input name="first" placeholder="Primeiro nome" required><br>
+    <input name="middle" placeholder="Nome do meio"><br>
+    <input name="last" placeholder="Sobrenome"><br>
+    <input name="extras" placeholder="Extras (TI, vendas...)"><br>
+    <input name="domain" placeholder="Domínio (ex: empresa.com)" required><br>
+    <label><input type="checkbox" name="light_mode"> Modo leve</label><br>
+    <button type="submit">Validar</button>
+  </form>
+  <h2>Resultados</h2>
+  <ul id="results"></ul>
+  <script>
+    document.getElementById("form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const data = {
+        first: form.first.value,
+        middle: form.middle.value,
+        last: form.last.value,
+        domain: form.domain.value,
+        light_mode: form.light_mode.checked,
+        extras: form.extras.value.split(" ").filter(Boolean)
+      };
+      const res = await fetch("/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+      const json = await res.json();
+      const list = document.getElementById("results");
+      list.innerHTML = "";
+      json.confirmed.forEach(email => {
+        const li = document.createElement("li");
+        li.textContent = email + " ✔️";
+        list.appendChild(li);
+      });
+      if (json.catch_all) {
+        const li = document.createElement("li");
+        li.textContent = "⚠️ Domínio parece ser catch-all.";
+        list.appendChild(li);
+      }
+    });
+  </script>
+</body>
+</html>
