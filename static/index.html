@@ -118,6 +118,9 @@
   </div>
 
   <script>
+  const form = document.getElementById("form");
+  const results = document.getElementById("results");
+
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     results.innerHTML = "<li class='loading'>⏳ Validando...</li>";
@@ -137,17 +140,25 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data)
       });
-      const json = await res.json();
-      console.log("Resposta da API:", json);
 
+      const json = await res.json();
       results.innerHTML = "";
-      results.innerHTML += `<li>✅ Confirmados: ${JSON.stringify(json.confirmed)}</li>`;
-      results.innerHTML += `<li>🔄 Totais testados: ${json.total_tested}</li>`;
-      if (json.catch_all) {
-        results.innerHTML += `<li>⚠️ Catch-all: true</li>`;
+
+      if (json.confirmed.length) {
+        results.innerHTML += `<li><strong>✅ Confirmados:</strong></li>`;
+        json.confirmed.forEach(email => {
+          results.innerHTML += `<li>${email} ✔️</li>`;
+        });
+      } else {
+        results.innerHTML += `<li>❌ Nenhum e-mail confirmado.</li>`;
       }
+
+      results.innerHTML += `<li style="margin-top: 10px;">🔢 Totais testados: ${json.total_tested}</li>`;
+      if (json.catch_all) {
+        results.innerHTML += `<li>⚠️ Este domínio parece ser catch-all.</li>`;
+      }
+
     } catch (err) {
-      console.error("Erro na requisição:", err);
       results.innerHTML = `<li>❌ Erro ao validar: ${err.message}</li>`;
     }
   });
