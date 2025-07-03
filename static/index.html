@@ -3,29 +3,128 @@
 <head>
   <meta charset="UTF-8">
   <title>Validador de E-mails</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    body { font-family: sans-serif; padding: 2rem; }
-    input, button { padding: 0.5rem; margin: 0.3rem 0; width: 100%; max-width: 300px; }
-    ul { padding-left: 1rem; }
+    :root {
+      --primary: #ff7a00;
+      --background: #ffffff;
+      --border: #e0e0e0;
+      --text: #222;
+      --muted: #777;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--background);
+      font-family: 'Segoe UI', sans-serif;
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 600px;
+      width: 100%;
+      padding: 2rem;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #fff;
+    }
+
+    h1 {
+      margin-bottom: 1rem;
+      font-size: 1.8rem;
+      color: var(--primary);
+    }
+
+    label {
+      font-weight: 600;
+      display: block;
+      margin-top: 1rem;
+    }
+
+    input[type="text"],
+    input[type="checkbox"] {
+      width: 100%;
+      padding: 0.6rem;
+      margin-top: 0.3rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 1rem;
+    }
+
+    button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.8rem 1.2rem;
+      font-size: 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 1.5rem;
+      width: 100%;
+    }
+
+    button:hover {
+      background: #e86d00;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin-top: 1.5rem;
+    }
+
+    li {
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .loading {
+      color: var(--muted);
+      font-style: italic;
+    }
   </style>
 </head>
 <body>
-  <h1>Validador de E-mails</h1>
-  <form id="form">
-    <input name="first" placeholder="Primeiro nome" required><br>
-    <input name="middle" placeholder="Nome do meio"><br>
-    <input name="last" placeholder="Sobrenome"><br>
-    <input name="extras" placeholder="Extras (TI, vendas...)"><br>
-    <input name="domain" placeholder="Domínio (ex: empresa.com)" required><br>
-    <label><input type="checkbox" name="light_mode"> Modo leve</label><br>
-    <button type="submit">Validar</button>
-  </form>
-  <h2>Resultados</h2>
-  <ul id="results"></ul>
+  <div class="container">
+    <h1>Validador de E-mails</h1>
+    <form id="form">
+      <label>Primeiro nome</label>
+      <input name="first" type="text" required>
+
+      <label>Nome do meio</label>
+      <input name="middle" type="text">
+
+      <label>Sobrenome</label>
+      <input name="last" type="text">
+
+      <label>Extras (TI, vendas...)</label>
+      <input name="extras" type="text">
+
+      <label>Domínio (ex: empresa.com)</label>
+      <input name="domain" type="text" required>
+
+      <label><input type="checkbox" name="light_mode"> Modo leve</label>
+
+      <button type="submit">Validar</button>
+    </form>
+
+    <ul id="results"></ul>
+  </div>
+
   <script>
-    document.getElementById("form").addEventListener("submit", async (e) => {
+    const form = document.getElementById("form");
+    const results = document.getElementById("results");
+
+    form.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const form = e.target;
+      results.innerHTML = "<li class='loading'>⏳ Validando...</li>";
+
       const data = {
         first: form.first.value,
         middle: form.middle.value,
@@ -34,23 +133,35 @@
         light_mode: form.light_mode.checked,
         extras: form.extras.value.split(" ").filter(Boolean)
       };
-      const res = await fetch("/validate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-      });
-      const json = await res.json();
-      const list = document.getElementById("results");
-      list.innerHTML = "";
-      json.confirmed.forEach(email => {
-        const li = document.createElement("li");
-        li.textContent = email + " ✔️";
-        list.appendChild(li);
-      });
-      if (json.catch_all) {
-        const li = document.createElement("li");
-        li.textContent = "⚠️ Domínio parece ser catch-all.";
-        list.appendChild(li);
+
+      try {
+        const res = await fetch("/validate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data)
+        });
+
+        const json = await res.json();
+        results.innerHTML = "";
+
+        if (json.confirmed.length) {
+          json.confirmed.forEach(email => {
+            const li = document.createElement("li");
+            li.textContent = email + " ✔️";
+            results.appendChild(li);
+          });
+        } else {
+          results.innerHTML = "<li>Nenhum e-mail confirmado.</li>";
+        }
+
+        if (json.catch_all) {
+          const li = document.createElement("li");
+          li.textContent = "⚠️ Domínio parece ser catch-all.";
+          results.appendChild(li);
+        }
+
+      } catch (err) {
+        results.innerHTML = "<li>Erro ao validar. Tente novamente.</li>";
       }
     });
   </script>
